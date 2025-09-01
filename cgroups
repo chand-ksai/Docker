@@ -1,0 +1,47 @@
+In Docker, **cgroups** (short for *control groups*) are a powerful Linux kernel feature used to manage and limit the resources that containers can use. 
+They’re one of the key building blocks that make containerization work.
+
+### 🧠 What Are cgroups?
+
+Control groups allow you to:
+- **Limit**: Set maximum CPU, memory, disk I/O, and network usage for containers.
+- **Prioritize**: Allocate more resources to critical containers.
+- **Isolate**: Prevent resource hogging by one container affecting others.
+- **Monitor**: Track resource usage for auditing and performance tuning.
+
+Docker uses cgroups under the hood to enforce these limits. For example, when you run:
+
+```bash
+docker run --memory="512m" --cpus="1.5" nginx
+```
+
+Docker configures the container’s cgroup to restrict it to 512MB of RAM and 1.5 CPU cores.
+
+### 🧩 How It Works
+
+- Each container gets its own set of cgroups.
+- These are mounted under `/sys/fs/cgroup` on most Linux systems.
+- You can inspect them using tools like `docker stats`, or by peeking into `/proc/<pid>/cgroup`.
+
+There are two versions:
+| Version | Description |
+|--------|-------------|
+| **cgroup v1** | Older, with separate hierarchies for each resource type. |
+| **cgroup v2** | Unified hierarchy, more flexible and easier to manage. |
+
+Modern distros like Ubuntu 21.10+, Fedora 31+, and Debian 11+ use **cgroup v2** by default.
+
+### 🔧 Advanced Use
+
+If you're doing deep performance tuning or fuzzing experiments, you might need to interact with cgroups directly. In such cases, you can run containers with:
+
+```bash
+docker run --privileged --cgroupns=host ...
+```
+
+This gives the container access to the host’s cgroup namespace, which is useful for custom setups.
+
+---
+
+Want to dive deeper into how Docker uses cgroups alongside namespaces for isolation and performance? You can check out [this detailed guide](https://earthly.dev/blog/namespaces-and-cgroups-docker/). 
+  Or if you're curious how this ties into Kubernetes resource limits and QoS classes, I can walk you through that next.
