@@ -1,0 +1,67 @@
+Kubernetes resource limits and Docker cgroups are tightly connected—but they operate at different layers of abstraction.
+
+Let’s break it down:
+
+---
+
+### 🧱 Docker cgroups: The Low-Level Enforcer
+
+**cgroups** (control groups) are a Linux kernel feature that Docker uses to:
+- **Limit** CPU, memory, I/O, and other resources
+- **Track** usage per container
+- **Enforce** isolation between containers
+
+When you run:
+```bash
+docker run --memory="512m" --cpus="1.5" nginx
+```
+Docker configures the container’s cgroup to restrict it to 512MB RAM and 1.5 CPU cores. These settings are applied directly via the kernel.
+
+---
+
+### 🚀 Kubernetes Resource Limits: The Declarative Interface
+
+Kubernetes doesn’t directly manage cgroups—it delegates that to the container runtime (like Docker or containerd). Instead, it provides a **declarative API** for resource management:
+
+```yaml
+resources:
+  requests:
+    memory: "256Mi"
+    cpu: "500m"
+  limits:
+    memory: "512Mi"
+    cpu: "1"
+```
+
+- **Requests**: Minimum guaranteed resources
+- **Limits**: Maximum allowed resources
+
+Kubelet translates these into cgroup configurations when scheduling pods. So Kubernetes is the **orchestrator**, while Docker (via cgroups) is the **enforcer**.
+
+---
+
+### 🧩 How They Work Together
+
+| Layer         | Role                        | Example |
+|---------------|-----------------------------|---------|
+| Kubernetes    | Declares intent              | `limits.cpu = 1` |
+| Kubelet       | Interprets and applies       | Maps to cgroup settings |
+| Docker/cgroups| Enforces at kernel level     | `cpu.max = 100000 100000` (1 core) |
+
+Kubernetes also uses cgroups to classify pods into **QoS classes**:
+- **Guaranteed**: Requests = Limits
+- **Burstable**: Requests < Limits
+- **BestEffort**: No requests/limits
+
+These classes map to different cgroup slices like `kubepods-guaranteed.slice` or `kubepods-besteffort.slice`.
+
+---
+
+### 🔍 Bonus Insight: cgroup v2
+
+Modern Kubernetes clusters (v1.25+) support **cgroup v2**, which offers:
+- Unified hierarchy
+- Better memory accounting
+- Features like **Pressure Stall Information (PSI)** for smarter scheduling
+
+---
